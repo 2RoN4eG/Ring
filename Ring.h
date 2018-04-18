@@ -1,96 +1,120 @@
-#ifndef CONTAINER_RING_H
-#define CONTAINER_RING_H
+#ifndef RING_H
+#define RING_H
 
-template <typename TRingItemValue>
+#include <iostream>
+
+/// Контейнер с кольцевой организаией элементов
+template <typename TRingElementItem>
 class Ring
 {
-    template <typename TItemValue>
-    class Item
+private:
+    template <typename TElementItem>
+    class Element
     {
-        friend class Ring <TItemValue>;
+        friend class Ring <TElementItem>;
 
-        Item <TItemValue> * 	Next	= nullptr;
-        Item <TItemValue> * 	Prev	= nullptr;
+        Element <TElementItem> *    Next            = nullptr;
 
-        TItemValue              Value;
+        Element <TElementItem> *    Prev            = nullptr;
+
+        TElementItem                Item;
     };
 
-    unsigned int                _size	= 0;
+    unsigned int                    _size           = 0;
 
-    Item <TRingItemValue> *		_first 	= nullptr;
+    Element <TRingElementItem> *    _first          = nullptr;
 
-    Item <TRingItemValue> *		_last 	= nullptr;
+    Element <TRingElementItem> *    _last           = nullptr;
 
-    Item <TRingItemValue> *     _item   = nullptr;
+    Element <TRingElementItem> *    _element        = nullptr;
 
 public:
     Ring () = default;
     ~Ring ()
     {
+        while (_size-- > 0)
+        {
+            Element <TRingElementItem> * element = _first;
+
+            _first = _first->Next;
+
+            delete element;
+        }
     }
 
-    int Insert (TRingItemValue & value)
-    {
-        // first -> ... -> last -> first
-
-        if (_first == nullptr || _last == nullptr)
-        {
-            Item <TRingItemValue> * item = CreateItem (value);
-
-            _first  = item;
-
-            _last   = item;
-        }
-        else
-        {
-            Item <TRingItemValue> * item = CreateItem (value, _first, _last);
-
-            _first->Prev = item;
-
-            _last->Next = item;
-
-            _last = item;
-        }
-
-        return ++_size;
-    }
-
+    /// API - Кол-во элементов в кольце
     int Size ()
     {
         return _size;
     }
 
-    TRingItemValue & Next ()
+    /// API - Добавление нового элемента в кольцо (значение - item)
+    int Insert (TRingElementItem & item)
     {
-        if (_item == nullptr && _size != 0)
+        // first -> ... -> last -> first
+
+        Element <TRingElementItem> * element = nullptr;
+
+        if (_first == nullptr)
         {
-            _item = _first;
+            element = CreateElement (item);
+
+            _first  = element;
+        }
+        else
+        {
+            element = CreateElement (item, _first, _last);
+
+            _first->Prev = element;
+
+            _last->Next = element;
         }
 
-        Item <TRingItemValue> * item = _item;
+        _last = element;
 
-        _item = _item->Next;
-
-        return item->Value;
+        return ++_size;
     }
 
-    TRingItemValue & Prev ()
+    /// API - Удаление элемента из кольцо (если совпало значение - item)
+    bool Remove (TRingElementItem & item)
     {
-        if (_item == nullptr && _size != 0)
+        return false;
+    }
+
+    /// API - Значение следующего элемента
+    TRingElementItem & Next ()
+    {
+        if (_element == nullptr && _size != 0)
         {
-            _item = _first;
+            _element = _first;
         }
 
-        Item <TRingItemValue> * item = _item;
+        Element <TRingElementItem> * element = _element;
 
-        _item = _item->Prev;
+        _element = _element->Next;
 
-        return item->Value;
+        return element->Item;
     }
 
-    TRingItemValue & operator [] (const int index)
+    /// API - Значение предидущего элемента
+    TRingElementItem & Prev ()
     {
-        Item <TRingItemValue> * item = _first;
+        if (_element == nullptr && _size != 0)
+        {
+            _element = _first;
+        }
+
+        Element <TRingElementItem> * element = _element;
+
+        _element = _element->Prev;
+
+        return element->Item;
+    }
+
+    /// API - Получение элемента по индексу
+    TRingElementItem & operator [] (const int index)
+    {
+        Element <TRingElementItem> * element = _first;
 
         if (index < 0)
         {
@@ -98,10 +122,8 @@ public:
 
             while (number-- > 0)
             {
-                item = item->Prev;
+                element = element->Prev;
             }
-
-            return item->Value;
         }
         else /// if (index >= 0)
         {
@@ -109,11 +131,11 @@ public:
 
             while (number-- > 0)
             {
-                item = item->Next;
+                element = element->Next;
             }
         }
 
-        return item->Value;
+        return element->Item;
 
         /// Функция может быть оптимизирована
         /// пример:
@@ -124,36 +146,36 @@ public:
         /// {
         ///     number = number % _size;
         ///
-        ///     Item <TRingItemValue> * item = _vector [number];
+        ///     Element <TRingElementitem> * Element = _vector [number];
         ///
-        ///     return item;
+        ///     return Element;
         /// }
     }
 
 private:
-    Item <TRingItemValue> * CreateItem (TRingItemValue & value)
+    Element <TRingElementItem> * CreateElement (TRingElementItem & item)
     {
-        Item <TRingItemValue> * item = new Item <TRingItemValue> ();
+        Element <TRingElementItem> * element = new Element <TRingElementItem> ();
 
-        item->Value = value;
+        element->Item   = item;
 
-        item->Next 	= item;
-        item->Prev 	= item;
+        element->Next   = element;
+        element->Prev 	= element;
 
-        return item;
+        return element;
     }
 
-    Item <TRingItemValue> * CreateItem (TRingItemValue & value, Item <TRingItemValue> * next, Item <TRingItemValue> * prev)
+    Element <TRingElementItem> * CreateElement (TRingElementItem & item, Element <TRingElementItem> * next, Element <TRingElementItem> * prev)
     {
-        Item <TRingItemValue> * item = new Item <TRingItemValue> ();
+        Element <TRingElementItem> * element = new Element <TRingElementItem> ();
 
-        item->Value		= value;
+        element->Item   = item;
 
-        item->Next 		= next;
-        item->Prev      = prev;
+        element->Next   = next;
+        element->Prev   = prev;
 
-        return item;
+        return element;
     }
 };
 
-#endif // CONTAINER_RING_H
+#endif // RING_H
